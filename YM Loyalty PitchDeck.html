@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Yerevan Mall — Loyalty Rebuild</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pink:#E8437A;
+  --purple:#9B6DD1;
+  --fg:#111;
+  --fg2:#555;
+  --fg3:#aaa;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#f7f4f8;font-family:'Inter',sans-serif}
+
+/* BLOBS */
+#blobs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.52;animation:drift linear infinite;will-change:transform}
+@keyframes drift{
+  0%  {transform:translate(0%,0%)   scale(1)}
+  30% {transform:translate(4%,6%)   scale(1.07)}
+  60% {transform:translate(-3%,9%)  scale(.95)}
+  85% {transform:translate(5%,-2%)  scale(1.04)}
+  100%{transform:translate(0%,0%)   scale(1)}
+}
+
+#deck{width:100%;height:100%;position:relative;z-index:1}
+
+/* SLIDE BASE */
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:clamp(18px,4.5vh,56px) clamp(20px,6vw,72px) 76px;
+  opacity:0;pointer-events:none;
+  transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
+  transform:translateY(24px);
+  overflow:hidden;
+}
+.slide.active{opacity:1;pointer-events:all;transform:none}
+.slide.out{opacity:0;transform:translateY(-24px);transition:opacity .38s,transform .38s}
+
+/* NAV */
+#nav{
+  position:fixed;bottom:clamp(14px,2.5vh,28px);left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,.9);backdrop-filter:blur(20px);
+  border:1.5px solid rgba(232,67,122,.18);border-radius:100px;
+  padding:9px 18px;z-index:100;
+  box-shadow:0 4px 20px rgba(232,67,122,.1);
+  white-space:nowrap;
+}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(232,67,122,.22);cursor:pointer;transition:all .28s;flex-shrink:0}
+.dot.on{background:var(--pink);transform:scale(1.45)}
+.nb{width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(232,67,122,.25);background:transparent;color:var(--pink);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.nb:hover{background:var(--pink);color:#fff;border-color:var(--pink)}
+#ctr{font-size:11px;color:#bbb;letter-spacing:.07em;min-width:32px;text-align:center}
+#prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--pink),var(--purple));transition:width .4s cubic-bezier(.4,0,.2,1);z-index:200;border-radius:0 2px 2px 0}
+
+/* SHARED */
+.logo-top{position:absolute;top:clamp(16px,3vh,28px);left:50%;transform:translateX(-50%);font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(12px,1.5vw,15px);letter-spacing:.02em;color:var(--fg);white-space:nowrap}
+.logo-top span{color:var(--pink)}
+.snum{position:absolute;top:clamp(16px,3vh,28px);right:clamp(20px,4vw,48px);font-size:11px;color:#ccc;letter-spacing:.1em}
+
+.chip{
+  display:inline-flex;align-items:center;
+  font-size:clamp(9px,1.1vw,11px);font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  padding:5px 16px;border-radius:100px;
+  background:rgba(232,67,122,.1);color:var(--pink);
+  margin-bottom:clamp(10px,2vh,18px);
+}
+
+/* TITLE BLOCK — always centered */
+.title-block{text-align:center;width:100%}
+.stitle{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(26px,5vw,62px);line-height:1.05;
+  letter-spacing:-.025em;color:var(--fg);
+}
+.stitle .a{color:var(--pink)}
+.ssub{
+  font-size:clamp(12px,1.3vw,15px);color:var(--fg2);font-weight:300;
+  line-height:1.7;max-width:520px;margin:clamp(10px,1.8vh,18px) auto clamp(16px,3vh,28px);
+}
+
+/* ── CARDS common ── */
+.glass{
+  background:rgba(255,255,255,.78);
+  backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.95);
+  border-radius:clamp(14px,2vw,22px);
+  box-shadow:0 2px 14px rgba(0,0,0,.04);
+}
+
+/* ─── 1 COVER ─── */
+.cov-title{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(48px,10vw,120px);line-height:.9;
+  letter-spacing:-.035em;color:var(--fg);
+  animation:fu .55s .15s both;
+}
+.cov-title .hi{
+  display:inline-block;
+  background:var(--pink);color:#fff;
+  padding:4px 22px 8px;border-radius:10px;margin-top:10px;
+}
+.cov-sub{
+  font-size:clamp(13px,1.5vw,17px);color:var(--fg2);font-weight:300;
+  line-height:1.75;max-width:500px;
+  margin:clamp(18px,3vh,32px) auto;
+  animation:fu .55s .35s both;
+}
+.cov-chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;animation:fu .55s .5s both}
+.cov-chip{font-size:clamp(10px,1.1vw,12px);font-weight:400;padding:9px 20px;border-radius:100px;border:1.5px solid rgba(232,67,122,.2);color:#6B3550;background:rgba(255,255,255,.7)}
+
+/* ─── 2 PROBLEM ─── */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(10px,1.5vw,16px);width:100%;max-width:920px;text-align:left}
+@media(max-width:640px){.pgrid{grid-template-columns:1fr}}
+.pcard{padding:clamp(20px,2.8vw,30px);animation:ci .5s backwards}
+.pcard:nth-child(1){animation-delay:.07s}
+.pcard:nth-child(2){animation-delay:.15s}
+.pcard:nth-child(3){animation-delay:.23s}
+.pico{font-size:clamp(28px,3.5vw,36px);margin-bottom:14px}
+.pcard h3{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(13px,1.5vw,16px);margin-bottom:9px;letter-spacing:-.01em;line-height:1.2}
+.pcard p{font-size:clamp(11px,1.15vw,13px);color:var(--fg2);line-height:1.65;font-weight:300}
+.ptag{display:inline-block;margin-top:14px;font-size:clamp(8px,.9vw,10px);letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:100px;background:rgba(232,67,122,.1);color:var(--pink);font-weight:500}
+
+/* ─── 3 INSIGHT ─── */
+.icard{
+  max-width:800px;width:100%;
+  padding:clamp(32px,5vw,68px) clamp(28px,5vw,76px);
+  background:rgba(255,255,255,.85);backdrop-filter:blur(18px);
+  border:2px solid rgba(232,67,122,.2);
+  border-radius:clamp(24px,3vw,38px);
+  box-shadow:0 6px 40px rgba(232,67,122,.07);
+}
+.iq{
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:clamp(20px,3.8vw,48px);line-height:1.15;
+  letter-spacing:-.025em;margin-bottom:clamp(16px,2.5vh,26px);
+}
+.iq .a{color:var(--pink)}
+.id{font-size:clamp(13px,1.35vw,15px);color:var(--fg2);line-height:1.8;font-weight:300;max-width:500px;margin:0 auto}
+
+/* ─── 4 PHASES ─── */
+.phwrap{display:flex;gap:clamp(10px,1.5vw,16px);width:100%;max-width:920px;align-items:stretch}
+@media(max-width:640px){.phwrap{flex-direction:column}}
+.phcard{
+  flex:1;padding:clamp(20px,3vw,36px) clamp(18px,2.5vw,32px);
+  background:rgba(255,255,255,.7);backdrop-filter:blur(12px);
+  border-radius:clamp(16px,2vw,24px);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 2px 14px rgba(0,0,0,.04);
+  text-align:left;
+}
+.phcard.hi{border:2px solid rgba(232,67,122,.28);background:rgba(255,255,255,.92);box-shadow:0 6px 32px rgba(232,67,122,.09)}
+.ph-badge{display:inline-flex;align-items:center;gap:6px;font-size:clamp(9px,1vw,10px);letter-spacing:.18em;text-transform:uppercase;color:var(--fg3);margin-bottom:14px;font-weight:500}
+.phcard.hi .ph-badge{color:var(--pink)}
+.ph-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.phname{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(14px,1.9vw,22px);margin-bottom:10px;letter-spacing:-.01em;line-height:1.2}
+.phdesc{font-size:clamp(11px,1.2vw,13px);color:var(--fg2);line-height:1.65;font-weight:300;margin-bottom:18px}
+.tlist{display:flex;flex-wrap:wrap;gap:7px}
+.t{font-size:clamp(9px,1vw,11px);padding:5px 11px;border-radius:100px;border:1.5px solid rgba(232,67,122,.18);color:#6B3550;background:rgba(255,255,255,.6)}
+.phcard.hi .t{background:rgba(232,67,122,.08);border-color:rgba(232,67,122,.25);color:var(--pink)}
+.ph-arrow{display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--pink);font-size:clamp(20px,2.5vw,28px);padding:0 clamp(6px,1vw,14px)}
+@media(max-width:640px){.ph-arrow{transform:rotate(90deg)}}
+
+/* ─── 5 EARN ─── */
+.egrid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(8px,1.2vw,13px);width:100%;max-width:860px}
+@media(max-width:520px){.egrid{grid-template-columns:1fr}}
+.erow{
+  display:flex;align-items:center;gap:clamp(10px,1.4vw,16px);
+  background:rgba(255,255,255,.78);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.95);border-radius:clamp(12px,1.5vw,16px);
+  padding:clamp(13px,1.8vw,20px) clamp(14px,2vw,22px);
+  box-shadow:0 1px 10px rgba(0,0,0,.03);
+  text-align:left;
+}
+.erow.full{grid-column:1/-1}
+.eico{width:clamp(38px,5vw,48px);height:clamp(38px,5vw,48px);border-radius:12px;background:rgba(232,67,122,.1);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,2.4vw,24px)}
+.etit{font-size:clamp(12px,1.35vw,14px);font-weight:500;margin-bottom:3px}
+.esub{font-size:clamp(10px,1.1vw,12px);color:var(--fg2);font-weight:300;line-height:1.5}
+.ebadge{margin-left:auto;flex-shrink:0;font-size:clamp(8px,.9vw,10px);font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 11px;border-radius:100px;background:rgba(232,67,122,.1);color:var(--pink)}
+
+/* ─── 6 REDEEM ─── */
+.rrow{display:flex;gap:clamp(8px,1.2vw,13px);width:100%;max-width:880px;flex-wrap:wrap}
+.rcard{
+  flex:1;min-width:clamp(120px,16vw,160px);
+  background:rgba(255,255,255,.78);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.95);border-radius:clamp(16px,2vw,22px);
+  padding:clamp(18px,2.5vw,28px) clamp(14px,1.8vw,20px);
+  box-shadow:0 2px 12px rgba(0,0,0,.04);
+  transition:transform .24s,box-shadow .24s;
+}
+.rcard:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(232,67,122,.1)}
+.rcard.conf{border:2px solid rgba(232,67,122,.22)}
+.rico{font-size:clamp(26px,3.8vw,40px);margin-bottom:12px}
+.rlbl{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(12px,1.5vw,16px);margin-bottom:7px;letter-spacing:-.01em;line-height:1.2}
+.rsub{font-size:clamp(10px,1.1vw,12px);color:var(--fg2);line-height:1.5;font-weight:300}
+.ctag{display:inline-block;margin-top:11px;font-size:clamp(8px,.85vw,9px);letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:100px;background:rgba(232,67,122,.1);color:var(--pink);font-weight:600}
+.ttag{display:inline-block;margin-top:11px;font-size:clamp(8px,.85vw,9px);letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:100px;background:rgba(0,0,0,.05);color:#bbb;font-weight:600}
+
+/* ─── 7 GAME ─── */
+.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.2vw,13px);width:100%;max-width:880px}
+@media(max-width:600px){.ggrid{grid-template-columns:1fr 1fr}}
+.gcard{
+  background:rgba(255,255,255,.75);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.95);border-radius:clamp(14px,1.8vw,20px);
+  padding:clamp(16px,2.2vw,24px);
+  animation:ci .48s backwards;
+  box-shadow:0 1px 10px rgba(0,0,0,.03);
+  text-align:left;
+}
+.gcard:nth-child(1){animation-delay:.05s}.gcard:nth-child(2){animation-delay:.10s}
+.gcard:nth-child(3){animation-delay:.15s}.gcard:nth-child(4){animation-delay:.20s}
+.gcard:nth-child(5){animation-delay:.25s}.gcard:nth-child(6){animation-delay:.30s}
+.gico{font-size:clamp(22px,3vw,30px);margin-bottom:10px}
+.gtit{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(11px,1.2vw,13px);margin-bottom:6px;line-height:1.25;letter-spacing:-.01em}
+.gdesc{font-size:clamp(10px,1.1vw,12px);color:var(--fg2);line-height:1.6;font-weight:300}
+.gex{margin-top:9px;font-size:clamp(9px,1vw,11px);color:var(--pink);font-style:italic;line-height:1.45}
+
+/* ─── 8 PHASE 2 ─── */
+.ewrap{display:flex;gap:clamp(10px,1.5vw,16px);width:100%;max-width:920px;align-items:stretch}
+@media(max-width:600px){.ewrap{flex-direction:column}}
+.evc{flex:1;padding:clamp(22px,3vw,38px) clamp(18px,2.5vw,34px);border-radius:clamp(16px,2vw,24px);text-align:left}
+.evc.cur{background:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.9)}
+.evc.fut{background:rgba(255,255,255,.9);border:2px solid rgba(232,67,122,.24);box-shadow:0 6px 32px rgba(232,67,122,.08)}
+.emid{display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0 clamp(8px,1.2vw,16px);color:var(--pink);font-size:clamp(22px,2.8vw,32px)}
+@media(max-width:600px){.emid{transform:rotate(90deg);padding:6px 0}}
+.elbl{font-size:clamp(9px,1vw,10px);letter-spacing:.18em;text-transform:uppercase;color:var(--fg3);margin-bottom:12px;font-weight:500}
+.evc.fut .elbl{color:var(--pink)}
+.ename{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(15px,1.9vw,21px);margin-bottom:16px;letter-spacing:-.01em;line-height:1.2}
+.eli{list-style:none;display:flex;flex-direction:column;gap:9px}
+.eli li{font-size:clamp(11px,1.2vw,13px);color:var(--fg2);font-weight:300;display:flex;align-items:flex-start;gap:9px;line-height:1.5}
+.eli li::before{content:'→';color:var(--pink);flex-shrink:0;font-size:12px;margin-top:1px;font-weight:700}
+.enote{margin-top:18px;padding:12px 16px;border-radius:12px;background:rgba(232,67,122,.08);text-align:center;font-size:clamp(10px,1.1vw,11px);color:var(--pink);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+
+/* ─── 9 NEXT STEPS ─── */
+.stlist{display:flex;flex-direction:column;width:100%;max-width:760px;text-align:left}
+.st{display:flex;align-items:flex-start;gap:clamp(14px,2.5vw,24px);padding:clamp(13px,2.2vh,20px) 0;border-bottom:1px solid rgba(232,67,122,.08);animation:fu .48s backwards}
+.st:nth-child(1){animation-delay:.04s}.st:nth-child(2){animation-delay:.09s}
+.st:nth-child(3){animation-delay:.14s}.st:nth-child(4){animation-delay:.19s}
+.st:nth-child(5){animation-delay:.24s}
+.stn{font-family:'Unbounded',sans-serif;font-size:clamp(28px,3.5vw,44px);font-weight:900;color:rgba(232,67,122,.18);line-height:1;flex-shrink:0;width:clamp(32px,4vw,48px);text-align:center;letter-spacing:-.03em}
+.sth{font-size:clamp(13px,1.4vw,15px);font-weight:500;margin-bottom:4px}
+.stp{font-size:clamp(11px,1.2vw,12px);color:var(--fg2);font-weight:300;line-height:1.5}
+.stown{margin-left:auto;flex-shrink:0;font-size:clamp(9px,.95vw,10px);letter-spacing:.12em;text-transform:uppercase;color:var(--pink);padding-top:4px;font-weight:600}
+
+/* ANIMS */
+@keyframes fu{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes ci{from{opacity:0;transform:translateY(13px) scale(.97)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div id="blobs">
+  <div class="blob" style="width:55vw;height:55vw;background:rgba(240,96,160,.38);top:-14%;left:-10%;animation-duration:24s"></div>
+  <div class="blob" style="width:44vw;height:44vw;background:rgba(139,92,200,.28);top:25%;right:-12%;animation-duration:30s;animation-delay:-9s"></div>
+  <div class="blob" style="width:38vw;height:38vw;background:rgba(232,67,122,.22);bottom:-10%;left:15%;animation-duration:21s;animation-delay:-15s"></div>
+  <div class="blob" style="width:26vw;height:26vw;background:rgba(180,100,220,.18);top:5%;right:22%;animation-duration:35s;animation-delay:-6s"></div>
+</div>
+
+<div id="deck">
+
+  <!-- 1 COVER -->
+  <div class="slide active" data-i="0">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">01 / 09</div>
+    <div class="cov-title" style="animation:fu .55s .15s both">
+      LOYALTY<br><span class="hi">REBUILT</span>
+    </div>
+    <p class="cov-sub">A full rebuild of the YM bonus program — on Gift Card infrastructure, zero manual review, built to evolve into a payment card ecosystem.</p>
+    <div class="cov-chips">
+      <span class="cov-chip">Growth & Product · 2026</span>
+      <span class="cov-chip">Concept Pitch</span>
+      <span class="cov-chip">Draft PRD v0.1</span>
+    </div>
+  </div>
+
+  <!-- 2 PROBLEM -->
+  <div class="slide" data-i="1">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">02 / 09</div>
+    <div class="chip">The problem</div>
+    <div class="title-block" style="margin-bottom:clamp(16px,3vh,28px)">
+      <div class="stitle">The old system is<br><span class="a">holding us back</span></div>
+    </div>
+    <div class="pgrid">
+      <div class="pcard glass">
+        <div class="pico">⏳</div>
+        <h3>Manual bottleneck</h3>
+        <p>CS validates every receipt by hand. Users wait days. Hours burned on zero-value work every month.</p>
+        <span class="ptag">Operational cost</span>
+      </div>
+      <div class="pcard glass">
+        <div class="pico">🔒</div>
+        <h3>No flexibility</h3>
+        <p>No campaigns, no multipliers, no gamification. Rules are hardcoded in legacy software with no vendor support.</p>
+        <span class="ptag">Technical debt</span>
+      </div>
+      <div class="pcard glass">
+        <div class="pico">🕳️</div>
+        <h3>Blind analytics</h3>
+        <p>No segmentation, no cohorts. We don't know which tenants drive loyalty or where we lose users.</p>
+        <span class="ptag">Data gap</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 INSIGHT -->
+  <div class="slide" data-i="2">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">03 / 09</div>
+    <div class="icard">
+      <div class="chip" style="margin:0 auto clamp(14px,2.5vh,22px)">Core insight</div>
+      <p class="iq">The Gift Card is already<br>the <span class="a">perfect payment rail.</span><br>Make it the loyalty rail too.</p>
+      <p class="id">Every Redeem event is a confirmed, real-time transaction. No receipts. No manual review. No fraud. Just verified spend — instantly convertible to points.</p>
+    </div>
+  </div>
+
+  <!-- 4 STRATEGY -->
+  <div class="slide" data-i="3">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">04 / 09</div>
+    <div class="chip">Strategy</div>
+    <div class="title-block" style="margin-bottom:clamp(16px,3vh,26px)">
+      <div class="stitle">Two steps,<br><span class="a">one infrastructure</span></div>
+    </div>
+    <div class="phwrap">
+      <div class="phcard hi">
+        <div class="ph-badge"><div class="ph-dot"></div>Now</div>
+        <div class="phname">Loyalty on Gift Cards</div>
+        <p class="phdesc">Points on every GC transaction. Gamification. Referrals. Campaigns. Redeem for Kinopark, Kid, GC top-up.</p>
+        <div class="tlist">
+          <span class="t">GC transactions → points</span>
+          <span class="t">Gamification</span>
+          <span class="t">4 redemption channels</span>
+          <span class="t">Campaigns</span>
+        </div>
+      </div>
+      <div class="ph-arrow">→</div>
+      <div class="phcard">
+        <div class="ph-badge"><div class="ph-dot"></div>Roadmap</div>
+        <div class="phname">YM Payment Card</div>
+        <p class="phdesc">Rebrand GC as a Payment Card. Enable top-up. Cover all tenants. Add tiers. Same backend — zero migration cost.</p>
+        <div class="tlist">
+          <span class="t">All tenants</span>
+          <span class="t">Bronze / Silver / Gold</span>
+          <span class="t">Top-up anytime</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 EARNING -->
+  <div class="slide" data-i="4">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">05 / 09</div>
+    <div class="chip">How users earn</div>
+    <div class="title-block" style="margin-bottom:clamp(14px,2.5vh,24px)">
+      <div class="stitle">5 ways to<br><span class="a">earn points</span></div>
+    </div>
+    <div class="egrid">
+      <div class="erow">
+        <div class="eico">💳</div>
+        <div><div class="etit">Gift Card transactions</div><div class="esub">X% of every purchase at YM tenants via GC</div></div>
+        <span class="ebadge">Primary</span>
+      </div>
+      <div class="erow">
+        <div class="eico">🎁</div>
+        <div><div class="etit">Activation bonuses</div><div class="esub">First GC · first purchase · profile complete</div></div>
+        <span class="ebadge">Onboarding</span>
+      </div>
+      <div class="erow">
+        <div class="eico">🏆</div>
+        <div><div class="etit">Challenges & gamification</div><div class="esub">Social follows, streaks, daily check-ins, surveys</div></div>
+        <span class="ebadge">Engagement</span>
+      </div>
+      <div class="erow">
+        <div class="eico">👥</div>
+        <div><div class="etit">Referrals</div><div class="esub">Bring a friend → both earn on their first GC activation</div></div>
+        <span class="ebadge">Growth</span>
+      </div>
+      <div class="erow full">
+        <div class="eico">⚡</div>
+        <div><div class="etit">Promo campaigns</div><div class="esub">Merchant spotlights, time-limited multipliers, flat bonuses — all from the admin panel. E.g. "2× points at Zara every Friday in June"</div></div>
+        <span class="ebadge">Marketing</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 REDEEM -->
+  <div class="slide" data-i="5">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">06 / 09</div>
+    <div class="chip">How users spend</div>
+    <div class="title-block" style="margin-bottom:clamp(14px,2.5vh,24px)">
+      <div class="stitle">4 redemption<br><span class="a">channels</span></div>
+    </div>
+    <div class="rrow">
+      <div class="rcard conf">
+        <div class="rico">🎬</div>
+        <div class="rlbl">Kinopark</div>
+        <div class="rsub">Buy cinema tickets with points in YM App</div>
+        <div class="ctag">Confirmed</div>
+      </div>
+      <div class="rcard conf">
+        <div class="rico">👶</div>
+        <div class="rlbl">Kid account</div>
+        <div class="rsub">Top up Kid balance via KEDA integration</div>
+        <div class="ctag">Confirmed</div>
+      </div>
+      <div class="rcard conf">
+        <div class="rico">💳</div>
+        <div class="rlbl">GC top-up</div>
+        <div class="rsub">Convert points into Gift Card balance — pay anywhere in YM</div>
+        <div class="ctag">Confirmed</div>
+      </div>
+      <div class="rcard">
+        <div class="rico">🏷️</div>
+        <div class="rlbl">Vouchers</div>
+        <div class="rsub">Tenant discounts configured from the admin panel</div>
+        <div class="ttag">Decision pending</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 GAMIFICATION -->
+  <div class="slide" data-i="6">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">07 / 09</div>
+    <div class="chip">Engagement</div>
+    <div class="title-block" style="margin-bottom:clamp(14px,2.5vh,22px)">
+      <div class="stitle">Loyalty that feels<br><span class="a">like a game</span></div>
+    </div>
+    <div class="ggrid">
+      <div class="gcard"><div class="gico">📅</div><div class="gtit">Daily streaks</div><div class="gdesc">Use your GC 5 days in a row — earn a streak bonus.</div><div class="gex">"Keep your streak alive today"</div></div>
+      <div class="gcard"><div class="gico">🏪</div><div class="gtit">Multi-store challenge</div><div class="gdesc">Visit 3 different stores this week to complete the challenge.</div><div class="gex">"2 of 3 — one more to go!"</div></div>
+      <div class="gcard"><div class="gico">📲</div><div class="gtit">Social actions</div><div class="gdesc">Follow YM on Instagram or share a post — earn instantly.</div><div class="gex">"Follow &amp; earn 200 points now"</div></div>
+      <div class="gcard"><div class="gico">⚡</div><div class="gtit">Merchant spotlight</div><div class="gdesc">3× points at a specific tenant — limited time only.</div><div class="gex">"Triple points at Zara until midnight"</div></div>
+      <div class="gcard"><div class="gico">🎂</div><div class="gtit">Birthday reward</div><div class="gdesc">Automatic bonus points credited on the user's birthday.</div><div class="gex">"Happy birthday — 500 points from us 🎉"</div></div>
+      <div class="gcard"><div class="gico">🏅</div><div class="gtit">Milestone badges</div><div class="gdesc">First purchase, 10th visit, 1,000 pts — visible achievements.</div><div class="gex">"You earned your first badge — Explorer"</div></div>
+    </div>
+  </div>
+
+  <!-- 8 PHASE 2 -->
+  <div class="slide" data-i="7">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">08 / 09</div>
+    <div class="chip">What's next</div>
+    <div class="title-block" style="margin-bottom:clamp(8px,1.5vh,14px)">
+      <div class="stitle">YM <span class="a">Payment Card</span></div>
+    </div>
+    <p class="ssub">Same backend. Zero migration. Just a rebrand and a top-up button.</p>
+    <div class="ewrap">
+      <div class="evc cur">
+        <div class="elbl">Now · Gift Card</div>
+        <div class="ename">YM Gift Card</div>
+        <ul class="eli">
+          <li>One-time top-up at purchase</li>
+          <li>Points on GC transactions only</li>
+          <li>PLUS infrastructure</li>
+          <li>Gamification + referrals</li>
+        </ul>
+      </div>
+      <div class="emid">→</div>
+      <div class="evc fut">
+        <div class="elbl">Roadmap · Payment Card</div>
+        <div class="ename">YM Payment Card</div>
+        <ul class="eli">
+          <li>Top up anytime</li>
+          <li>Points at all YM tenants</li>
+          <li>Same PLUS APIs — no rework</li>
+          <li>Bronze / Silver / Gold tiers</li>
+          <li>Tenant-level targeting</li>
+        </ul>
+        <div class="enote">Backend identical · Migration cost: zero</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9 NEXT STEPS -->
+  <div class="slide" data-i="8">
+    <div class="logo-top">YEREVAN<span>mall</span></div>
+    <div class="snum">09 / 09</div>
+    <div class="chip">What's needed now</div>
+    <div class="title-block" style="margin-bottom:clamp(14px,2.5vh,26px)">
+      <div class="stitle">5 decisions to<br><span class="a">unlock this</span></div>
+    </div>
+    <div class="stlist">
+      <div class="st">
+        <div class="stn">1</div>
+        <div style="flex:1"><div class="sth">Earning mechanics & points name</div><div class="stp">Base rate, conversion, expiry, branded currency name — workshop with Growth &amp; Finance</div></div>
+        <div class="stown">Growth + Finance</div>
+      </div>
+      <div class="st">
+        <div class="stn">2</div>
+        <div style="flex:1"><div class="sth">Technical architecture</div><div class="stp">Build vs Buy · PLUS webhook spec · KEDA API · Kinopark integration</div></div>
+        <div class="stown">IT + Product</div>
+      </div>
+      <div class="st">
+        <div class="stn">3</div>
+        <div style="flex:1"><div class="sth">Redemption channels — final list</div><div class="stp">Vouchers: keep, redesign, or replace?</div></div>
+        <div class="stown">Growth + Product</div>
+      </div>
+      <div class="st">
+        <div class="stn">4</div>
+        <div style="flex:1"><div class="sth">Budget & launch deadline</div><div class="stp">Build budget, go-live date, team setup (in-house vs vendor)</div></div>
+        <div class="stown">Leadership</div>
+      </div>
+      <div class="st">
+        <div class="stn">5</div>
+        <div style="flex:1"><div class="sth">Finalize PRD → move to spec</div><div class="stp">Lock all decisions in PRD v0.1 → technical spec → dev kickoff</div></div>
+        <div class="stown">Product + IT</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="nav">
+  <button class="nb" id="pb">←</button>
+  <div id="dots"></div>
+  <span id="ctr">1 / 9</span>
+  <button class="nb" id="nb2">→</button>
+</div>
+<div id="prog"></div>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const N=slides.length;
+let cur=0,busy=false;
+const dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' on':'');
+  d.onclick=()=>go(i);
+  dotsEl.appendChild(d);
+});
+function go(n){
+  if(busy||n===cur||n<0||n>=N)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('out');
+  const p=cur;cur=n;
+  setTimeout(()=>{slides[p].classList.remove('out');slides[cur].classList.add('active');busy=false;},400);
+  sync();
+}
+function sync(){
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+  document.getElementById('ctr').textContent=`${cur+1} / ${N}`;
+  document.getElementById('prog').style.width=`${((cur+1)/N)*100}%`;
+}
+document.getElementById('pb').onclick=()=>go(cur-1);
+document.getElementById('nb2').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(cur-1);
+});
+let tx=0,ty=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40)dx<0?go(cur+1):go(cur-1);
+},{passive:true});
+sync();
+</script>
+</body>
+</html>
